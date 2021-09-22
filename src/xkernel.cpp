@@ -8,6 +8,7 @@
 ****************************************************************************/
 
 #include <string>
+#include <iostream>
 #include <random>
 
 #include "xeus/xkernel.hpp"
@@ -120,6 +121,7 @@ namespace xeus
 
     void xkernel::init(server_builder sbuilder)
     {
+        std::clog << "new uuid" << std::endl;
         m_kernel_id = new_xguid();
         m_session_id = new_xguid();
 
@@ -128,19 +130,25 @@ namespace xeus
             m_config.m_key = new_xguid();
         }
 
+        std::clog << "make auth" << std::endl;
         using authentication_ptr = xkernel_core::authentication_ptr;
         authentication_ptr auth = make_xauthentication(m_config.m_signature_scheme, m_config.m_key);
 
+        std::clog << "init logger" << std::endl;
         if(p_logger == nullptr || std::getenv("XEUS_LOG") == nullptr)
         {
             p_logger = std::make_unique<xlogger_nolog>();
         }
 
+        std::clog << "sbuilder" << std::endl;
         p_server = sbuilder(*p_context, m_config, m_error_handler);
+        std::clog << "update conf" << std::endl;
         p_server->update_config(m_config);
 
+        std::clog << "debug build" << std::endl;
         p_debugger = m_debugger_builder(*p_context, m_config, m_user_name, m_session_id, m_debugger_config);
 
+        std::clog << "make core" << std::endl;
         p_core = std::make_unique<xkernel_core>(m_kernel_id,
                                                 m_user_name,
                                                 m_session_id,
@@ -152,8 +160,10 @@ namespace xeus
                                                 p_debugger.get(),
                                                 m_error_handler);
 
+        std::clog << "messenger" << std::endl;
         xcontrol_messenger& messenger = p_server->get_control_messenger();
 
+        std::clog << "register" << std::endl;
         if(p_debugger != nullptr)
         {
             p_debugger->register_control_messenger(messenger);
@@ -161,7 +171,9 @@ namespace xeus
 
         p_interpreter->register_control_messenger(messenger);
         p_interpreter->register_history_manager(*p_history_manager);
+        std::clog << "configure" << std::endl;
         p_interpreter->configure();
+        std::clog << "done" << std::endl;
     }
 
     void xkernel::start()
